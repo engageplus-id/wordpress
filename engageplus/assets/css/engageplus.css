@@ -1,0 +1,188 @@
+/**
+ * EngagePlus WordPress Plugin Styles
+ *
+ * Frontend widget styling
+ *
+ * @package EngagePlus
+ * @since 1.0.0
+ */
+
+/* Widget Container */
+.engageplus-widget {
+    margin: 1rem 0;
+    position: relative;
+    min-height: 48px;
+}
+
+.engageplus-widget.engageplus-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.engageplus-widget.engageplus-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: engageplus-spin 0.8s linear infinite;
+}
+
+@keyframes engageplus-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Messages */
+.engageplus-message {
+    padding: 12px 16px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.engageplus-message-success {
+    background-color: #d1fae5;
+    border: 1px solid #34d399;
+    color: #065f46;
+}
+
+.engageplus-message-error {
+    background-color: #fee2e2;
+    border: 1px solid #f87171;
+    color: #991b1b;
+}
+
+.engageplus-message-info {
+    background-color: #dbeafe;
+    border: 1px solid #60a5fa;
+    color: #1e40af;
+}
+
+/* Logout Button */
+.engageplus-logout-wrapper {
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.engageplus-logout-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #ef4444;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.engageplus-logout-btn:hover {
+    background-color: #dc2626;
+    color: #ffffff !important;
+}
+
+/* Admin Notice */
+.engageplus-notice {
+    padding: 12px 16px;
+    background-color: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 14px;
+}
+
+.engageplus-notice a {
+    color: #92400e;
+    text-decoration: underline;
+}
+
+.engageplus-notice a:hover {
+    color: #78350f;
+}
+
+/* Login Form Integration */
+.engageplus-login-form-widget {
+    margin: 1.5rem 0;
+}
+
+.engageplus-separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.engageplus-separator::before,
+.engageplus-separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #d1d5db;
+}
+
+.engageplus-separator span {
+    padding: 0 1rem;
+}
+
+/* Widget Sidebar Styling */
+.widget-engageplus .engageplus-widget {
+    margin: 0.5rem 0;
+}
+
+.widget-engageplus .widget-title {
+    margin-bottom: 0.75rem;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 782px) {
+    .engageplus-widget {
+        margin: 0.75rem 0;
+    }
+    
+    .engageplus-message {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    
+    .engageplus-logout-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Dark Theme Adjustments */
+.engageplus-widget[data-theme="dark"] {
+    /* Widget will handle its own dark styling */
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .engageplus-message {
+        border-width: 2px;
+    }
+    
+    .engageplus-logout-btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .engageplus-widget.engageplus-loading::after {
+        animation: none;
+    }
+    
+    .engageplus-logout-btn {
+        transition: none;
+    }
+}
+

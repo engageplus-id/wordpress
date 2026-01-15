@@ -1,0 +1,40 @@
+# Environment files
+.env
+.env.*
+*.env
+
+# AWS credentials
+.aws/
+credentials
+*credentials*
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# WordPress config (if testing locally)
+wp-config.php
+
+# Logs
+*.log
+debug.log
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+*.zip
+*.tar.gz
