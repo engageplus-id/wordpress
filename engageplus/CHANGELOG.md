@@ -5,6 +5,34 @@ All notable changes to the EngagePlus WordPress Plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-19
+
+### Added
+- **Management API Integration** - Full integration with EngagePlus Management API
+- **Provider Management Page** - Add, edit, test, and delete OIDC identity providers
+- **Widget Configuration Page** - Customize widget branding, auth flow, layout, and auth methods
+- **Webhooks Management Page** - Create and manage webhook subscriptions for auth events
+- **Data Integrations Page** - Configure Supabase and Airtable integrations
+- **Email Providers Page** - Configure email delivery (SendGrid, Mailgun, Postmark, SES, SMTP)
+- **Metrics Dashboard** - View authentication analytics with Chart.js visualizations
+- **API Client Class** - New `EngagePlus_API_Client` class for all API interactions
+- **Admin JavaScript** - Full admin interface with modals, forms, and AJAX handling
+- API Key setting for Management API authentication
+- Organization info display on dashboard
+- Service success rate metrics
+
+### Changed
+- Reorganized admin menu to top-level with submenus
+- Settings page now at EngagePlus > Settings
+- Modernized admin interface with card-based layout
+- Updated admin styles with new components (modals, badges, metrics cards)
+- Plugin link on plugins page now points to new settings location
+
+### Security
+- API key stored securely in WordPress options
+- AJAX requests protected with nonces
+- Capability checks on all admin pages
+
 ## [1.1.0] - 2026-02-19
 
 ### Changed

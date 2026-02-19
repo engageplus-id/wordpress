@@ -2,7 +2,7 @@
 
 Add social login to your WordPress site using any OIDC provider with EngagePlus - a lightweight, data-agnostic authentication platform.
 
-![WordPress Plugin Version](https://img.shields.io/badge/version-1.1.0-blue)
+![WordPress Plugin Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![WordPress Minimum Version](https://img.shields.io/badge/wordpress-%3E%3D5.0-green)
 ![PHP Minimum Version](https://img.shields.io/badge/php-%3E%3D7.4-purple)
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
@@ -21,6 +21,17 @@ EngagePlus is a lightweight JavaScript widget that enables social login via any 
 - 🔒 **Secure** - HTTPS required, PKCE flow, no user data stored by EngagePlus
 - 🧩 **Multiple Widgets** - Place multiple widgets across your site
 - 📊 **Debug Mode** - Built-in logging for troubleshooting
+
+### Management API Features (New in 1.2.0)
+
+With an API Key, you can manage EngagePlus directly from WordPress:
+
+- 🔧 **Provider Management** - Add, edit, and test OIDC providers
+- 🎨 **Widget Configuration** - Customize widget styling and auth methods
+- 🔗 **Webhooks** - Configure event notifications
+- 📦 **Data Integrations** - Sync to Supabase or Airtable
+- 📧 **Email Providers** - Configure SendGrid, Mailgun, SES, SMTP, etc.
+- 📈 **Metrics Dashboard** - View login analytics and service performance
 
 ## Installation
 
@@ -55,14 +66,30 @@ git clone https://github.com/engageplus-id/wordpress.git engageplus
 
 ### Step 2: Configure the Plugin
 
-1. Go to **Settings** > **EngagePlus** in your WordPress admin
+1. Go to **EngagePlus** > **Settings** in your WordPress admin
 2. Enter your **Organization ID**
-3. Configure user settings:
+3. (Optional) Enter your **API Key** to enable Management features
+4. Configure user settings:
    - **Auto Create Users**: Enable to create WordPress accounts for new OAuth users
    - **Default Role**: Choose which role to assign to new users
    - **Username Pattern**: Use email or display name for usernames
    - **Skip Email Verification**: Trust OAuth provider verification (recommended)
-4. Save settings
+5. Save settings
+
+### Step 2b: Enable Management API (Optional)
+
+To manage EngagePlus directly from WordPress:
+
+1. Go to [engageplus.id](https://engageplus.id) > **Settings** > **API Keys**
+2. Create a new API key with the scopes you need:
+   - `providers` - Manage OIDC providers
+   - `widget` - Configure widget styling
+   - `webhooks` - Manage webhooks
+   - `integrations` - Configure data integrations
+   - `email_providers` - Configure email delivery
+   - `metrics` - View analytics
+3. Copy the API key and paste it in **EngagePlus** > **Settings**
+4. Once saved, new menu items will appear for managing each feature
 
 ### Step 3: Configure Redirect URI
 
@@ -332,6 +359,19 @@ Contributions are welcome! Please:
 This plugin is licensed under the GPL-2.0+ license. See [LICENSE](LICENSE) for details.
 
 ## Changelog
+
+### 1.2.0 (2026-02-19)
+- **Management API Integration** - Configure EngagePlus directly from WordPress
+  - Provider management (add, edit, test, delete OIDC providers)
+  - Widget configuration (styling, auth methods, branding)
+  - Webhooks management (create, edit, delete event subscriptions)
+  - Data integrations (Supabase, Airtable)
+  - Email provider configuration (SendGrid, Mailgun, SES, SMTP, Postmark)
+  - Metrics dashboard with analytics and charts
+- New top-level admin menu with dedicated pages for each feature
+- API Key setting for Management API access
+- Reorganized admin interface with card-based layout
+- Added Chart.js for metrics visualization
 
 ### 1.1.0 (2026-02-19)
 - Updated to new OPWidget PKCE-based authentication

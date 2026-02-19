@@ -3,7 +3,7 @@
  * EngagePlus Admin Settings Page Template
  *
  * @package EngagePlus
- * @since 1.1.0
+ * @since 1.2.0
  */
 
 // Prevent direct access
@@ -13,109 +13,127 @@ if (!defined('ABSPATH')) {
 
 $plugin = engageplus();
 $org_id = $plugin->get_setting('org_id');
+$api_key = $plugin->get_setting('api_key');
 ?>
 
-<div class="wrap engageplus-settings-wrap">
+<div class="wrap engageplus-admin-wrap">
     
     <!-- Header -->
     <div class="engageplus-admin-header">
-        <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="45" fill="white" fill-opacity="0.2"/>
-            <path d="M30 35h40v6H30v-6zm0 12h40v6H30v-6zm0 12h25v6H30v-6z" fill="white"/>
-        </svg>
-        <div>
+        <div class="engageplus-header-content">
             <h1><?php esc_html_e('EngagePlus Settings', 'engageplus'); ?></h1>
             <p><?php esc_html_e('Configure social login for your WordPress site using any OIDC provider.', 'engageplus'); ?></p>
         </div>
     </div>
     
     <!-- Status -->
-    <?php if ($org_id) : ?>
-        <div class="engageplus-status engageplus-status-success">
-            <span class="dashicons dashicons-yes-alt"></span>
-            <?php esc_html_e('Widget configured and ready', 'engageplus'); ?>
+    <div class="engageplus-card">
+        <h2><?php esc_html_e('Status', 'engageplus'); ?></h2>
+        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+            <?php if ($org_id) : ?>
+                <span class="engageplus-badge engageplus-badge-success">
+                    <?php esc_html_e('Organization ID ✓', 'engageplus'); ?>
+                </span>
+            <?php else : ?>
+                <span class="engageplus-badge engageplus-badge-secondary">
+                    <?php esc_html_e('Organization ID Required', 'engageplus'); ?>
+                </span>
+            <?php endif; ?>
+            
+            <?php if ($api_key) : ?>
+                <span class="engageplus-badge engageplus-badge-success">
+                    <?php esc_html_e('API Key ✓', 'engageplus'); ?>
+                </span>
+            <?php else : ?>
+                <span class="engageplus-badge engageplus-badge-secondary">
+                    <?php esc_html_e('API Key Optional', 'engageplus'); ?>
+                </span>
+            <?php endif; ?>
         </div>
-    <?php else : ?>
-        <div class="engageplus-status engageplus-status-warning">
-            <span class="dashicons dashicons-warning"></span>
-            <?php esc_html_e('Organization ID required - Get yours from the EngagePlus dashboard', 'engageplus'); ?>
-        </div>
-    <?php endif; ?>
-    
-    <!-- Quick Links -->
-    <div class="engageplus-quick-links">
-        <a href="https://engageplus.id" target="_blank" rel="noopener" class="engageplus-quick-link">
-            <span class="dashicons dashicons-external"></span>
-            <?php esc_html_e('EngagePlus Dashboard', 'engageplus'); ?>
-        </a>
-        <a href="https://engageplus.id/docs" target="_blank" rel="noopener" class="engageplus-quick-link">
-            <span class="dashicons dashicons-book"></span>
-            <?php esc_html_e('Documentation', 'engageplus'); ?>
-        </a>
-        <a href="https://github.com/engageplus-id/wordpress" target="_blank" rel="noopener" class="engageplus-quick-link">
-            <span class="dashicons dashicons-editor-code"></span>
-            <?php esc_html_e('GitHub', 'engageplus'); ?>
-        </a>
+        
+        <?php if (!$api_key) : ?>
+        <p style="margin-top: 12px; color: #6b7280; font-size: 13px;">
+            <?php esc_html_e('Add an API Key to unlock Management features: configure providers, widget styling, webhooks, and more from WordPress.', 'engageplus'); ?>
+        </p>
+        <?php endif; ?>
     </div>
     
     <!-- Settings Form -->
-    <form method="post" action="options.php" class="engageplus-settings-form">
-        <?php
-        settings_fields('engageplus_settings_group');
-        do_settings_sections('engageplus');
-        submit_button(__('Save Settings', 'engageplus'));
-        ?>
-    </form>
+    <div class="engageplus-card">
+        <form method="post" action="options.php" class="engageplus-settings-form">
+            <?php
+            settings_fields('engageplus_settings_group');
+            do_settings_sections('engageplus');
+            submit_button(__('Save Settings', 'engageplus'));
+            ?>
+        </form>
+    </div>
     
     <!-- Usage Info -->
-    <div class="engageplus-info-box">
-        <h3><?php esc_html_e('How to Use', 'engageplus'); ?></h3>
-        <p>
-            <?php
-            printf(
-                esc_html__('Use the shortcode %1$s anywhere in your content, or add the "EngagePlus Login" widget to any widget area. The login button will also appear on the WordPress login page.', 'engageplus'),
-                '<code>[engageplus]</code>'
-            );
-            ?>
-        </p>
+    <div class="engageplus-card">
+        <h2><?php esc_html_e('Widget Integration', 'engageplus'); ?></h2>
+        <p><?php esc_html_e('Use the shortcode anywhere in your content, or add the "EngagePlus Login" widget to any widget area.', 'engageplus'); ?></p>
+        
+        <h3><?php esc_html_e('Shortcode', 'engageplus'); ?></h3>
+        <code class="engageplus-shortcode">[engageplus]</code>
+        
+        <h3><?php esc_html_e('Options', 'engageplus'); ?></h3>
+        <ul style="margin-left: 20px;">
+            <li><code>[engageplus hide_logged_in="false"]</code> - <?php esc_html_e('Show for logged-in users', 'engageplus'); ?></li>
+            <li><code>[engageplus show_logout="true"]</code> - <?php esc_html_e('Show logout button when logged in', 'engageplus'); ?></li>
+        </ul>
+        
+        <h3><?php esc_html_e('Redirect URI', 'engageplus'); ?></h3>
+        <p><?php esc_html_e('Add this URL as a redirect URI in your EngagePlus dashboard:', 'engageplus'); ?></p>
+        <code class="engageplus-shortcode"><?php echo esc_url($plugin->get_callback_url()); ?></code>
     </div>
     
-    <div class="engageplus-info-box">
-        <h3><?php esc_html_e('Shortcode Options', 'engageplus'); ?></h3>
-        <p>
-            <code>[engageplus]</code> - <?php esc_html_e('Basic widget (styling configured in EngagePlus dashboard)', 'engageplus'); ?><br>
-            <code>[engageplus hide_logged_in="false"]</code> - <?php esc_html_e('Show for logged-in users', 'engageplus'); ?><br>
-            <code>[engageplus show_logout="true"]</code> - <?php esc_html_e('Show logout button when logged in', 'engageplus'); ?>
-        </p>
+    <?php if ($api_key) : ?>
+    <div class="engageplus-card">
+        <h2><?php esc_html_e('Management Features', 'engageplus'); ?></h2>
+        <p><?php esc_html_e('With your API Key configured, you can manage EngagePlus directly from WordPress:', 'engageplus'); ?></p>
+        <div class="engageplus-quick-actions" style="margin-top: 16px;">
+            <a href="<?php echo esc_url(admin_url('admin.php?page=engageplus-providers')); ?>" class="engageplus-action-card">
+                <span class="dashicons dashicons-networking"></span>
+                <span class="action-title"><?php esc_html_e('Providers', 'engageplus'); ?></span>
+            </a>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=engageplus-widget')); ?>" class="engageplus-action-card">
+                <span class="dashicons dashicons-admin-appearance"></span>
+                <span class="action-title"><?php esc_html_e('Widget', 'engageplus'); ?></span>
+            </a>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=engageplus-webhooks')); ?>" class="engageplus-action-card">
+                <span class="dashicons dashicons-rss"></span>
+                <span class="action-title"><?php esc_html_e('Webhooks', 'engageplus'); ?></span>
+            </a>
+            <a href="<?php echo esc_url(admin_url('admin.php?page=engageplus-metrics')); ?>" class="engageplus-action-card">
+                <span class="dashicons dashicons-chart-bar"></span>
+                <span class="action-title"><?php esc_html_e('Metrics', 'engageplus'); ?></span>
+            </a>
+        </div>
     </div>
+    <?php endif; ?>
     
-    <div class="engageplus-info-box">
-        <h3><?php esc_html_e('Widget Styling', 'engageplus'); ?></h3>
-        <p>
-            <?php esc_html_e('Widget appearance (colors, button text, providers, etc.) is configured in the EngagePlus dashboard, not in WordPress. This allows you to update styling without modifying your WordPress site.', 'engageplus'); ?>
-        </p>
-    </div>
-    
-    <div class="engageplus-info-box">
-        <h3><?php esc_html_e('Redirect URI for EngagePlus Dashboard', 'engageplus'); ?></h3>
-        <p>
-            <?php esc_html_e('Add this URL as a redirect URI in your EngagePlus dashboard:', 'engageplus'); ?><br>
-            <code><?php echo esc_url($plugin->get_callback_url()); ?></code>
-        </p>
-    </div>
-    
-    <!-- Footer -->
-    <div class="engageplus-admin-footer">
-        <p>
-            <?php
-            printf(
-                esc_html__('EngagePlus WordPress Plugin v%s | %s | %s', 'engageplus'),
-                ENGAGEPLUS_VERSION,
-                '<a href="https://engageplus.id" target="_blank" rel="noopener">engageplus.id</a>',
-                '<a href="mailto:support@engageplus.id">support@engageplus.id</a>'
-            );
-            ?>
-        </p>
+    <!-- Quick Links -->
+    <div class="engageplus-card">
+        <h2><?php esc_html_e('Resources', 'engageplus'); ?></h2>
+        <div class="engageplus-quick-links">
+            <a href="https://engageplus.id" target="_blank" rel="noopener" class="engageplus-quick-link">
+                <span class="dashicons dashicons-external"></span>
+                <?php esc_html_e('EngagePlus Dashboard', 'engageplus'); ?>
+            </a>
+            <a href="https://engageplus.id/docs" target="_blank" rel="noopener" class="engageplus-quick-link">
+                <span class="dashicons dashicons-book"></span>
+                <?php esc_html_e('Documentation', 'engageplus'); ?>
+            </a>
+            <a href="https://engageplus.id/docs/api" target="_blank" rel="noopener" class="engageplus-quick-link">
+                <span class="dashicons dashicons-rest-api"></span>
+                <?php esc_html_e('API Reference', 'engageplus'); ?>
+            </a>
+            <a href="https://github.com/engageplus-id/wordpress" target="_blank" rel="noopener" class="engageplus-quick-link">
+                <span class="dashicons dashicons-editor-code"></span>
+                <?php esc_html_e('GitHub', 'engageplus'); ?>
+            </a>
+        </div>
     </div>
     
 </div>

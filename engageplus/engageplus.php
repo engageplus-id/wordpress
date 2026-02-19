@@ -3,7 +3,7 @@
  * Plugin Name: EngagePlus
  * Plugin URI: https://engageplus.id
  * Description: Add social login to your WordPress site using any OIDC provider with EngagePlus - a lightweight, data-agnostic authentication platform.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: EngagePlus Team
  * Author URI: https://engageplus.id
  * License: GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('ENGAGEPLUS_VERSION', '1.1.0');
+define('ENGAGEPLUS_VERSION', '1.2.0');
 define('ENGAGEPLUS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('ENGAGEPLUS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENGAGEPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -65,6 +65,7 @@ class EngagePlus {
     private function load_settings() {
         $defaults = array(
             'org_id' => '',
+            'api_key' => '',
             'widget_url' => 'https://auth.engageplus.id/public/pkce.js',
             'auto_create_users' => true,
             'default_role' => 'subscriber',
@@ -115,6 +116,9 @@ class EngagePlus {
         add_action('wp_ajax_nopriv_engageplus_auth', array($this, 'handle_auth_callback'));
         add_action('wp_ajax_engageplus_logout', array($this, 'handle_logout'));
         
+        // AJAX hooks for Management API
+        add_action('wp_ajax_engageplus_api_request', array($this, 'handle_api_request'));
+        
         // REST API endpoint for callback
         add_action('rest_api_init', array($this, 'register_rest_routes'));
         
@@ -132,6 +136,12 @@ class EngagePlus {
     private function load_dependencies() {
         require_once ENGAGEPLUS_PLUGIN_DIR . 'includes/class-engageplus-widget.php';
         require_once ENGAGEPLUS_PLUGIN_DIR . 'includes/class-engageplus-user-handler.php';
+        require_once ENGAGEPLUS_PLUGIN_DIR . 'includes/class-engageplus-api-client.php';
+        
+        // Load admin classes if in admin
+        if (is_admin()) {
+            require_once ENGAGEPLUS_PLUGIN_DIR . 'includes/class-engageplus-admin.php';
+        }
     }
     
     /**
@@ -142,6 +152,7 @@ class EngagePlus {
         if (!get_option('engageplus_settings')) {
             add_option('engageplus_settings', array(
                 'org_id' => '',
+                'api_key' => '',
                 'widget_url' => 'https://auth.engageplus.id/public/pkce.js',
                 'auto_create_users' => true,
                 'default_role' => 'subscriber',
@@ -167,13 +178,169 @@ class EngagePlus {
      * Add admin menu
      */
     public function add_admin_menu() {
-        add_options_page(
-            __('EngagePlus Settings', 'engageplus'),
+        // Main menu
+        add_menu_page(
+            __('EngagePlus', 'engageplus'),
             __('EngagePlus', 'engageplus'),
             'manage_options',
             'engageplus',
+            array($this, 'render_dashboard_page'),
+            'dashicons-shield-alt',
+            80
+        );
+        
+        // Dashboard submenu (same as parent)
+        add_submenu_page(
+            'engageplus',
+            __('Dashboard', 'engageplus'),
+            __('Dashboard', 'engageplus'),
+            'manage_options',
+            'engageplus',
+            array($this, 'render_dashboard_page')
+        );
+        
+        // Settings submenu
+        add_submenu_page(
+            'engageplus',
+            __('Settings', 'engageplus'),
+            __('Settings', 'engageplus'),
+            'manage_options',
+            'engageplus-settings',
             array($this, 'render_settings_page')
         );
+        
+        // Only show management pages if API key is configured
+        if (!empty($this->get_setting('api_key'))) {
+            // Providers submenu
+            add_submenu_page(
+                'engageplus',
+                __('Providers', 'engageplus'),
+                __('Providers', 'engageplus'),
+                'manage_options',
+                'engageplus-providers',
+                array($this, 'render_providers_page')
+            );
+            
+            // Widget submenu
+            add_submenu_page(
+                'engageplus',
+                __('Widget', 'engageplus'),
+                __('Widget', 'engageplus'),
+                'manage_options',
+                'engageplus-widget',
+                array($this, 'render_widget_page')
+            );
+            
+            // Webhooks submenu
+            add_submenu_page(
+                'engageplus',
+                __('Webhooks', 'engageplus'),
+                __('Webhooks', 'engageplus'),
+                'manage_options',
+                'engageplus-webhooks',
+                array($this, 'render_webhooks_page')
+            );
+            
+            // Integrations submenu
+            add_submenu_page(
+                'engageplus',
+                __('Integrations', 'engageplus'),
+                __('Integrations', 'engageplus'),
+                'manage_options',
+                'engageplus-integrations',
+                array($this, 'render_integrations_page')
+            );
+            
+            // Email Providers submenu
+            add_submenu_page(
+                'engageplus',
+                __('Email Providers', 'engageplus'),
+                __('Email', 'engageplus'),
+                'manage_options',
+                'engageplus-email',
+                array($this, 'render_email_page')
+            );
+            
+            // Metrics submenu
+            add_submenu_page(
+                'engageplus',
+                __('Metrics', 'engageplus'),
+                __('Metrics', 'engageplus'),
+                'manage_options',
+                'engageplus-metrics',
+                array($this, 'render_metrics_page')
+            );
+        }
+    }
+    
+    /**
+     * Render dashboard page
+     */
+    public function render_dashboard_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-dashboard.php';
+    }
+    
+    /**
+     * Render providers page
+     */
+    public function render_providers_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-providers.php';
+    }
+    
+    /**
+     * Render widget configuration page
+     */
+    public function render_widget_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-widget-config.php';
+    }
+    
+    /**
+     * Render webhooks page
+     */
+    public function render_webhooks_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-webhooks.php';
+    }
+    
+    /**
+     * Render integrations page
+     */
+    public function render_integrations_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-integrations.php';
+    }
+    
+    /**
+     * Render email providers page
+     */
+    public function render_email_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-email.php';
+    }
+    
+    /**
+     * Render metrics page
+     */
+    public function render_metrics_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+        include ENGAGEPLUS_PLUGIN_DIR . 'templates/admin-metrics.php';
     }
     
     /**
@@ -199,6 +366,15 @@ class EngagePlus {
             'engageplus',
             'engageplus_api_section',
             array('field' => 'org_id', 'description' => __('Your EngagePlus Organization ID from the dashboard.', 'engageplus'))
+        );
+        
+        add_settings_field(
+            'api_key',
+            __('API Key', 'engageplus'),
+            array($this, 'render_password_field'),
+            'engageplus',
+            'engageplus_api_section',
+            array('field' => 'api_key', 'description' => __('Your EngagePlus API Key for Management API access. Create one in Settings > API Keys in the EngagePlus dashboard.', 'engageplus'))
         );
         
         // User Settings Section
@@ -294,6 +470,7 @@ class EngagePlus {
         $sanitized = array();
         
         $sanitized['org_id'] = sanitize_text_field($input['org_id'] ?? '');
+        $sanitized['api_key'] = sanitize_text_field($input['api_key'] ?? '');
         $sanitized['widget_url'] = esc_url_raw($input['widget_url'] ?? 'https://auth.engageplus.id/public/pkce.js');
         $sanitized['auto_create_users'] = !empty($input['auto_create_users']);
         $sanitized['default_role'] = sanitize_text_field($input['default_role'] ?? 'subscriber');
@@ -320,7 +497,8 @@ class EngagePlus {
      * Section render callbacks
      */
     public function render_api_section() {
-        echo '<p>' . esc_html__('Configure your EngagePlus credentials. Get your Organization ID from the EngagePlus dashboard. Widget styling is configured in the EngagePlus dashboard.', 'engageplus') . '</p>';
+        echo '<p>' . esc_html__('Configure your EngagePlus credentials. Get your Organization ID and API Key from the EngagePlus dashboard.', 'engageplus') . '</p>';
+        echo '<p>' . esc_html__('With an API Key configured, you can manage providers, widget styling, webhooks, integrations, and more directly from WordPress.', 'engageplus') . '</p>';
     }
     
     public function render_user_section() {
@@ -407,11 +585,35 @@ class EngagePlus {
         }
     }
     
+    public function render_password_field($args) {
+        $field = $args['field'];
+        $value = $this->get_setting($field);
+        $description = $args['description'] ?? '';
+        
+        $masked = !empty($value) ? str_repeat('•', 20) : '';
+        
+        printf(
+            '<input type="password" id="%s" name="engageplus_settings[%s]" value="%s" class="regular-text" autocomplete="new-password">',
+            esc_attr($field),
+            esc_attr($field),
+            esc_attr($value)
+        );
+        
+        if (!empty($value)) {
+            echo '<span class="engageplus-api-key-status" style="margin-left: 10px; color: #46b450;">✓ Configured</span>';
+        }
+        
+        if ($description) {
+            printf('<p class="description">%s</p>', esc_html($description));
+        }
+    }
+    
     /**
      * Enqueue admin assets
      */
     public function enqueue_admin_assets($hook) {
-        if ('settings_page_engageplus' !== $hook) {
+        // Check if we're on an EngagePlus admin page
+        if (strpos($hook, 'engageplus') === false && strpos($hook, 'toplevel_page_engageplus') === false) {
             return;
         }
         
@@ -421,6 +623,41 @@ class EngagePlus {
             array(),
             ENGAGEPLUS_VERSION
         );
+        
+        // Enqueue Chart.js for metrics page
+        if (strpos($hook, 'engageplus-metrics') !== false) {
+            wp_enqueue_script(
+                'chartjs',
+                'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+                array(),
+                '4.4.1',
+                true
+            );
+        }
+        
+        // Admin JavaScript
+        wp_enqueue_script(
+            'engageplus-admin-js',
+            ENGAGEPLUS_PLUGIN_URL . 'assets/js/admin.js',
+            array('jquery'),
+            ENGAGEPLUS_VERSION,
+            true
+        );
+        
+        wp_localize_script('engageplus-admin-js', 'engageplusAdmin', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('engageplus_admin'),
+            'apiConfigured' => !empty($this->get_setting('api_key')),
+            'strings' => array(
+                'confirmDelete' => __('Are you sure you want to delete this item?', 'engageplus'),
+                'saving' => __('Saving...', 'engageplus'),
+                'saved' => __('Saved!', 'engageplus'),
+                'error' => __('An error occurred. Please try again.', 'engageplus'),
+                'testing' => __('Testing...', 'engageplus'),
+                'testSuccess' => __('Connection successful!', 'engageplus'),
+                'testFailed' => __('Connection failed.', 'engageplus'),
+            ),
+        ));
     }
     
     /**
@@ -677,11 +914,139 @@ class EngagePlus {
     public function add_settings_link($links) {
         $settings_link = sprintf(
             '<a href="%s">%s</a>',
-            admin_url('options-general.php?page=engageplus'),
+            admin_url('admin.php?page=engageplus-settings'),
             __('Settings', 'engageplus')
         );
         array_unshift($links, $settings_link);
         return $links;
+    }
+    
+    /**
+     * Handle Management API AJAX requests
+     */
+    public function handle_api_request() {
+        check_ajax_referer('engageplus_admin', 'nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied.', 'engageplus')));
+        }
+        
+        $action = sanitize_text_field($_POST['api_action'] ?? '');
+        $data = isset($_POST['data']) ? json_decode(stripslashes($_POST['data']), true) : array();
+        
+        $api = new EngagePlus_API_Client($this);
+        
+        if (!$api->is_configured()) {
+            wp_send_json_error(array('message' => __('API key not configured.', 'engageplus')));
+        }
+        
+        $result = null;
+        
+        switch ($action) {
+            // Providers
+            case 'get_providers':
+                $result = $api->get_providers();
+                break;
+            case 'create_provider':
+                $result = $api->create_provider($data);
+                break;
+            case 'update_provider':
+                $result = $api->update_provider($data['id'], $data);
+                break;
+            case 'delete_provider':
+                $result = $api->delete_provider($data['id']);
+                break;
+            case 'test_provider':
+                $result = $api->test_provider($data['id']);
+                break;
+                
+            // Widget
+            case 'get_widget':
+                $result = $api->get_widget_config();
+                break;
+            case 'update_widget':
+                $result = $api->patch_widget_config($data);
+                break;
+                
+            // Webhooks
+            case 'get_webhooks':
+                $result = $api->get_webhooks();
+                break;
+            case 'create_webhook':
+                $result = $api->create_webhook($data);
+                break;
+            case 'update_webhook':
+                $result = $api->update_webhook($data['id'], $data);
+                break;
+            case 'delete_webhook':
+                $result = $api->delete_webhook($data['id']);
+                break;
+                
+            // Integrations
+            case 'get_integrations':
+                $result = $api->get_integrations();
+                break;
+            case 'create_integration':
+                $result = $api->create_integration($data);
+                break;
+            case 'update_integration':
+                $result = $api->update_integration($data['id'], $data);
+                break;
+            case 'delete_integration':
+                $result = $api->delete_integration($data['id']);
+                break;
+                
+            // Email Providers
+            case 'get_email_providers':
+                $result = $api->get_email_providers();
+                break;
+            case 'create_email_provider':
+                $result = $api->create_email_provider($data);
+                break;
+            case 'update_email_provider':
+                $result = $api->update_email_provider($data['id'], $data);
+                break;
+            case 'delete_email_provider':
+                $result = $api->delete_email_provider($data['id']);
+                break;
+            case 'test_email_provider':
+                $result = $api->test_email_provider($data['id']);
+                break;
+                
+            // Metrics
+            case 'get_metrics':
+                $days = intval($data['days'] ?? 30);
+                $result = $api->get_metrics($days);
+                break;
+            case 'get_provider_metrics':
+                $days = intval($data['days'] ?? 30);
+                $result = $api->get_provider_metrics($days);
+                break;
+                
+            // Organization
+            case 'get_organization':
+                $result = $api->get_organization();
+                break;
+            case 'add_redirect_uri':
+                $result = $api->add_redirect_uri($data['uri']);
+                break;
+                
+            default:
+                wp_send_json_error(array('message' => __('Unknown action.', 'engageplus')));
+        }
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+        }
+        
+        wp_send_json_success($result);
+    }
+    
+    /**
+     * Get API client instance
+     */
+    public function get_api_client() {
+        return new EngagePlus_API_Client($this);
     }
     
     /**
