@@ -2,9 +2,10 @@
  * EngagePlus WordPress Plugin JavaScript
  *
  * Handles widget initialization and authentication callbacks
+ * Uses the OPWidget PKCE-based authentication flow
  *
  * @package EngagePlus
- * @since 1.0.0
+ * @since 1.1.0
  */
 
 (function($) {
@@ -19,7 +20,7 @@
         config: window.engageplusConfig || {},
         
         /**
-         * Widgets initialized
+         * Widget instances
          */
         widgets: [],
         
@@ -29,9 +30,8 @@
         init: function() {
             var self = this;
             
-            // Wait for EngagePlus widget to be ready
-            if (typeof window.EngagePlus === 'undefined') {
-                // Wait for the script to load
+            // Wait for OPWidget to be ready
+            if (typeof window.OPWidget === 'undefined') {
                 $(document).ready(function() {
                     self.waitForWidget();
                 });
@@ -39,12 +39,12 @@
                 self.initWidgets();
             }
             
-            // Listen for EngagePlus events
+            // Bind events
             this.bindEvents();
         },
         
         /**
-         * Wait for EngagePlus widget to load
+         * Wait for OPWidget to load
          */
         waitForWidget: function() {
             var self = this;
@@ -54,12 +54,12 @@
             var checkWidget = setInterval(function() {
                 attempts++;
                 
-                if (typeof window.EngagePlus !== 'undefined') {
+                if (typeof window.OPWidget !== 'undefined') {
                     clearInterval(checkWidget);
                     self.initWidgets();
                 } else if (attempts >= maxAttempts) {
                     clearInterval(checkWidget);
-                    self.log('EngagePlus widget failed to load');
+                    self.log('OPWidget failed to load');
                 }
             }, 100);
         },
@@ -76,9 +76,9 @@
                 return;
             }
             
-            // Check for client ID
-            if (!this.config.clientId) {
-                this.log('Client ID not configured');
+            // Check for Organization ID
+            if (!this.config.orgId) {
+                this.log('Organization ID not configured');
                 return;
             }
             
@@ -107,40 +107,30 @@
                 $container.attr('id', containerId);
             }
             
-            // Get widget-specific settings
-            var buttonText = $container.data('button-text') || this.config.buttonText || 'Sign In';
-            var theme = $container.data('theme') || this.config.theme || 'light';
-            var showLabels = $container.data('show-labels');
-            if (showLabels === undefined) {
-                showLabels = this.config.showLabels;
-            }
-            
             this.log('Initializing widget: ' + containerId);
             
-            // Initialize EngagePlus widget
             try {
-                EngagePlus.init({
-                    clientId: this.config.clientId,
-                    issuer: this.config.apiBaseUrl,
-                    container: '#' + containerId,
-                    buttonText: buttonText,
-                    theme: theme,
-                    showLabels: showLabels,
-                    
-                    // Authentication callbacks
-                    onLogin: function(user) {
-                        self.handleLogin(user);
-                    },
-                    onLogout: function() {
-                        self.handleLogout();
+                // Create new OPWidget instance with PKCE flow
+                var widget = new OPWidget({
+                    orgId: this.config.orgId,
+                    redirectUri: this.config.redirectUri,
+                    onSuccess: function(tokens) {
+                        self.handleSuccess(tokens);
                     },
                     onError: function(error) {
                         self.handleError(error);
                     }
                 });
                 
-                this.widgets.push(containerId);
-                this.log('Widget initialized successfully');
+                // Mount the widget to the container
+                widget.mount('#' + containerId);
+                
+                this.widgets.push({
+                    id: containerId,
+                    instance: widget
+                });
+                
+                this.log('Widget mounted successfully');
                 
             } catch (error) {
                 this.log('Failed to initialize widget: ' + error.message);
@@ -148,24 +138,24 @@
         },
         
         /**
-         * Handle successful login
+         * Handle successful authentication
          */
-        handleLogin: function(user) {
+        handleSuccess: function(tokens) {
             var self = this;
             
-            this.log('Login callback received', user);
+            this.log('Authentication successful, received tokens');
             
             // Show loading state
             this.showLoading();
             
-            // Send user data to WordPress
+            // Send tokens to WordPress to create/login user
             $.ajax({
                 url: this.config.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'engageplus_auth',
                     nonce: this.config.nonce,
-                    user_data: JSON.stringify(user)
+                    tokens: JSON.stringify(tokens)
                 },
                 success: function(response) {
                     self.hideLoading();
@@ -195,38 +185,11 @@
         },
         
         /**
-         * Handle logout
-         */
-        handleLogout: function() {
-            var self = this;
-            
-            this.log('Logout callback received');
-            
-            $.ajax({
-                url: this.config.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'engageplus_logout',
-                    nonce: this.config.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        self.log('WordPress logout successful');
-                        window.location.href = response.data.redirect || window.location.href;
-                    }
-                },
-                error: function(xhr, status, error) {
-                    self.log('Logout error', { status: status, error: error });
-                }
-            });
-        },
-        
-        /**
          * Handle authentication error
          */
         handleError: function(error) {
             this.log('Authentication error', error);
-            this.showMessage(error.message || 'Authentication failed', 'error');
+            this.showMessage(error.message || error || 'Authentication failed', 'error');
         },
         
         /**
@@ -235,22 +198,13 @@
         bindEvents: function() {
             var self = this;
             
-            // Listen for EngagePlus DOM events
-            $(document).on('engageplus:login', function(e, user) {
-                self.handleLogin(user);
-            });
-            
-            $(document).on('engageplus:logout', function() {
-                self.handleLogout();
+            // Listen for custom events
+            $(document).on('engageplus:success', function(e, tokens) {
+                self.handleSuccess(tokens);
             });
             
             $(document).on('engageplus:error', function(e, error) {
                 self.handleError(error);
-            });
-            
-            // Handle logout button clicks
-            $(document).on('click', '.engageplus-logout-btn', function(e) {
-                // Allow default logout URL to work
             });
         },
         
@@ -318,4 +272,3 @@
     window.EngagePlusWP = EngagePlusWP;
     
 })(jQuery);
-

@@ -3,7 +3,7 @@
  * EngagePlus WordPress Widget
  *
  * @package EngagePlus
- * @since 1.0.0
+ * @since 1.1.0
  */
 
 // Prevent direct access
@@ -24,7 +24,7 @@ class EngagePlus_Widget extends WP_Widget {
             'engageplus_widget',
             __('EngagePlus Login', 'engageplus'),
             array(
-                'description' => __('Add EngagePlus social login to your site.', 'engageplus'),
+                'description' => __('Add EngagePlus social login to your site. Styling is configured in the EngagePlus dashboard.', 'engageplus'),
                 'classname' => 'widget-engageplus',
             )
         );
@@ -36,8 +36,6 @@ class EngagePlus_Widget extends WP_Widget {
     public function widget($args, $instance) {
         $title = !empty($instance['title']) ? $instance['title'] : '';
         $container_id = !empty($instance['container_id']) ? $instance['container_id'] : 'engageplus-widget-' . $this->id;
-        $button_text = !empty($instance['button_text']) ? $instance['button_text'] : '';
-        $theme = !empty($instance['theme']) ? $instance['theme'] : '';
         $hide_logged_in = !empty($instance['hide_logged_in']);
         $show_logout = !empty($instance['show_logout']);
         
@@ -65,14 +63,6 @@ class EngagePlus_Widget extends WP_Widget {
             'show_logout="' . ($show_logout ? 'true' : 'false') . '"',
         );
         
-        if ($button_text) {
-            $shortcode_atts[] = 'button_text="' . esc_attr($button_text) . '"';
-        }
-        
-        if ($theme) {
-            $shortcode_atts[] = 'theme="' . esc_attr($theme) . '"';
-        }
-        
         echo $args['before_widget'];
         
         if ($title) {
@@ -90,8 +80,6 @@ class EngagePlus_Widget extends WP_Widget {
     public function form($instance) {
         $title = !empty($instance['title']) ? $instance['title'] : '';
         $container_id = !empty($instance['container_id']) ? $instance['container_id'] : 'engageplus-widget';
-        $button_text = !empty($instance['button_text']) ? $instance['button_text'] : '';
-        $theme = !empty($instance['theme']) ? $instance['theme'] : '';
         $hide_logged_in = !empty($instance['hide_logged_in']);
         $show_logout = !empty($instance['show_logout']);
         ?>
@@ -107,18 +95,8 @@ class EngagePlus_Widget extends WP_Widget {
             <small><?php esc_html_e('Unique ID for this widget instance.', 'engageplus'); ?></small>
         </p>
         
-        <p>
-            <label for="<?php echo esc_attr($this->get_field_id('button_text')); ?>"><?php esc_html_e('Button Text:', 'engageplus'); ?></label>
-            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('button_text')); ?>" name="<?php echo esc_attr($this->get_field_name('button_text')); ?>" type="text" value="<?php echo esc_attr($button_text); ?>" placeholder="<?php esc_attr_e('Use global setting', 'engageplus'); ?>">
-        </p>
-        
-        <p>
-            <label for="<?php echo esc_attr($this->get_field_id('theme')); ?>"><?php esc_html_e('Theme:', 'engageplus'); ?></label>
-            <select class="widefat" id="<?php echo esc_attr($this->get_field_id('theme')); ?>" name="<?php echo esc_attr($this->get_field_name('theme')); ?>">
-                <option value="" <?php selected($theme, ''); ?>><?php esc_html_e('Use global setting', 'engageplus'); ?></option>
-                <option value="light" <?php selected($theme, 'light'); ?>><?php esc_html_e('Light', 'engageplus'); ?></option>
-                <option value="dark" <?php selected($theme, 'dark'); ?>><?php esc_html_e('Dark', 'engageplus'); ?></option>
-            </select>
+        <p class="description">
+            <?php esc_html_e('Widget styling (colors, button text, providers) is configured in the EngagePlus dashboard.', 'engageplus'); ?>
         </p>
         
         <p>
@@ -141,12 +119,9 @@ class EngagePlus_Widget extends WP_Widget {
         $instance = array();
         $instance['title'] = !empty($new_instance['title']) ? sanitize_text_field($new_instance['title']) : '';
         $instance['container_id'] = !empty($new_instance['container_id']) ? sanitize_html_class($new_instance['container_id']) : 'engageplus-widget';
-        $instance['button_text'] = !empty($new_instance['button_text']) ? sanitize_text_field($new_instance['button_text']) : '';
-        $instance['theme'] = !empty($new_instance['theme']) && in_array($new_instance['theme'], array('light', 'dark')) ? $new_instance['theme'] : '';
         $instance['hide_logged_in'] = !empty($new_instance['hide_logged_in']);
         $instance['show_logout'] = !empty($new_instance['show_logout']);
         
         return $instance;
     }
 }
-

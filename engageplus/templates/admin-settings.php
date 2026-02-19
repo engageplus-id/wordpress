@@ -3,7 +3,7 @@
  * EngagePlus Admin Settings Page Template
  *
  * @package EngagePlus
- * @since 1.0.0
+ * @since 1.1.0
  */
 
 // Prevent direct access
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 $plugin = engageplus();
-$client_id = $plugin->get_setting('client_id');
+$org_id = $plugin->get_setting('org_id');
 ?>
 
 <div class="wrap engageplus-settings-wrap">
@@ -30,7 +30,7 @@ $client_id = $plugin->get_setting('client_id');
     </div>
     
     <!-- Status -->
-    <?php if ($client_id) : ?>
+    <?php if ($org_id) : ?>
         <div class="engageplus-status engageplus-status-success">
             <span class="dashicons dashicons-yes-alt"></span>
             <?php esc_html_e('Widget configured and ready', 'engageplus'); ?>
@@ -38,7 +38,7 @@ $client_id = $plugin->get_setting('client_id');
     <?php else : ?>
         <div class="engageplus-status engageplus-status-warning">
             <span class="dashicons dashicons-warning"></span>
-            <?php esc_html_e('Client ID required - Get yours from the EngagePlus dashboard', 'engageplus'); ?>
+            <?php esc_html_e('Organization ID required - Get yours from the EngagePlus dashboard', 'engageplus'); ?>
         </div>
     <?php endif; ?>
     
@@ -83,11 +83,16 @@ $client_id = $plugin->get_setting('client_id');
     <div class="engageplus-info-box">
         <h3><?php esc_html_e('Shortcode Options', 'engageplus'); ?></h3>
         <p>
-            <code>[engageplus]</code> - <?php esc_html_e('Basic widget with global settings', 'engageplus'); ?><br>
-            <code>[engageplus button_text="Login"]</code> - <?php esc_html_e('Custom button text', 'engageplus'); ?><br>
-            <code>[engageplus theme="dark"]</code> - <?php esc_html_e('Dark theme', 'engageplus'); ?><br>
+            <code>[engageplus]</code> - <?php esc_html_e('Basic widget (styling configured in EngagePlus dashboard)', 'engageplus'); ?><br>
             <code>[engageplus hide_logged_in="false"]</code> - <?php esc_html_e('Show for logged-in users', 'engageplus'); ?><br>
             <code>[engageplus show_logout="true"]</code> - <?php esc_html_e('Show logout button when logged in', 'engageplus'); ?>
+        </p>
+    </div>
+    
+    <div class="engageplus-info-box">
+        <h3><?php esc_html_e('Widget Styling', 'engageplus'); ?></h3>
+        <p>
+            <?php esc_html_e('Widget appearance (colors, button text, providers, etc.) is configured in the EngagePlus dashboard, not in WordPress. This allows you to update styling without modifying your WordPress site.', 'engageplus'); ?>
         </p>
     </div>
     
@@ -95,7 +100,7 @@ $client_id = $plugin->get_setting('client_id');
         <h3><?php esc_html_e('Redirect URI for EngagePlus Dashboard', 'engageplus'); ?></h3>
         <p>
             <?php esc_html_e('Add this URL as a redirect URI in your EngagePlus dashboard:', 'engageplus'); ?><br>
-            <code><?php echo esc_url(home_url()); ?></code>
+            <code><?php echo esc_url($plugin->get_callback_url()); ?></code>
         </p>
     </div>
     
@@ -114,4 +119,3 @@ $client_id = $plugin->get_setting('client_id');
     </div>
     
 </div>
-

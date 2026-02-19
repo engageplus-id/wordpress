@@ -3,7 +3,7 @@
  * Plugin Name: EngagePlus
  * Plugin URI: https://engageplus.id
  * Description: Add social login to your WordPress site using any OIDC provider with EngagePlus - a lightweight, data-agnostic authentication platform.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: EngagePlus Team
  * Author URI: https://engageplus.id
  * License: GPL-2.0+
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('ENGAGEPLUS_VERSION', '1.0.0');
+define('ENGAGEPLUS_VERSION', '1.1.0');
 define('ENGAGEPLUS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('ENGAGEPLUS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('ENGAGEPLUS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -64,16 +64,12 @@ class EngagePlus {
      */
     private function load_settings() {
         $defaults = array(
-            'client_id' => '',
-            'api_base_url' => 'https://engageplus.id',
-            'widget_url' => 'https://engageplus.id/widget.js',
+            'org_id' => '',
+            'widget_url' => 'https://auth.engageplus.id/public/pkce.js',
             'auto_create_users' => true,
             'default_role' => 'subscriber',
             'username_pattern' => 'email',
             'skip_email_verification' => true,
-            'button_text' => 'Sign In',
-            'theme' => 'light',
-            'show_labels' => true,
             'redirect_after_login' => '',
             'debug_mode' => false,
         );
@@ -145,16 +141,12 @@ class EngagePlus {
         // Set default options
         if (!get_option('engageplus_settings')) {
             add_option('engageplus_settings', array(
-                'client_id' => '',
-                'api_base_url' => 'https://engageplus.id',
-                'widget_url' => 'https://engageplus.id/widget.js',
+                'org_id' => '',
+                'widget_url' => 'https://auth.engageplus.id/public/pkce.js',
                 'auto_create_users' => true,
                 'default_role' => 'subscriber',
                 'username_pattern' => 'email',
                 'skip_email_verification' => true,
-                'button_text' => 'Sign In',
-                'theme' => 'light',
-                'show_labels' => true,
                 'redirect_after_login' => '',
                 'debug_mode' => false,
             ));
@@ -201,21 +193,12 @@ class EngagePlus {
         );
         
         add_settings_field(
-            'client_id',
-            __('Client ID', 'engageplus'),
+            'org_id',
+            __('Organization ID', 'engageplus'),
             array($this, 'render_text_field'),
             'engageplus',
             'engageplus_api_section',
-            array('field' => 'client_id', 'description' => __('Your EngagePlus Client ID from the dashboard.', 'engageplus'))
-        );
-        
-        add_settings_field(
-            'api_base_url',
-            __('API Base URL', 'engageplus'),
-            array($this, 'render_text_field'),
-            'engageplus',
-            'engageplus_api_section',
-            array('field' => 'api_base_url', 'description' => __('The EngagePlus API base URL. Default: https://engageplus.id', 'engageplus'))
+            array('field' => 'org_id', 'description' => __('Your EngagePlus Organization ID from the dashboard.', 'engageplus'))
         );
         
         // User Settings Section
@@ -269,48 +252,6 @@ class EngagePlus {
             array('field' => 'skip_email_verification', 'description' => __('Trust OAuth provider email verification (recommended).', 'engageplus'))
         );
         
-        // Widget Appearance Section
-        add_settings_section(
-            'engageplus_appearance_section',
-            __('Widget Appearance', 'engageplus'),
-            array($this, 'render_appearance_section'),
-            'engageplus'
-        );
-        
-        add_settings_field(
-            'button_text',
-            __('Button Text', 'engageplus'),
-            array($this, 'render_text_field'),
-            'engageplus',
-            'engageplus_appearance_section',
-            array('field' => 'button_text', 'description' => __('Text displayed on the login button.', 'engageplus'))
-        );
-        
-        add_settings_field(
-            'theme',
-            __('Theme', 'engageplus'),
-            array($this, 'render_select_field'),
-            'engageplus',
-            'engageplus_appearance_section',
-            array(
-                'field' => 'theme',
-                'options' => array(
-                    'light' => __('Light', 'engageplus'),
-                    'dark' => __('Dark', 'engageplus'),
-                ),
-                'description' => __('Widget color theme.', 'engageplus'),
-            )
-        );
-        
-        add_settings_field(
-            'show_labels',
-            __('Show Provider Labels', 'engageplus'),
-            array($this, 'render_checkbox_field'),
-            'engageplus',
-            'engageplus_appearance_section',
-            array('field' => 'show_labels', 'description' => __('Display provider names next to icons.', 'engageplus'))
-        );
-        
         // Redirect Settings Section
         add_settings_section(
             'engageplus_redirect_section',
@@ -352,16 +293,12 @@ class EngagePlus {
     public function sanitize_settings($input) {
         $sanitized = array();
         
-        $sanitized['client_id'] = sanitize_text_field($input['client_id'] ?? '');
-        $sanitized['api_base_url'] = esc_url_raw($input['api_base_url'] ?? 'https://engageplus.id');
-        $sanitized['widget_url'] = esc_url_raw($input['widget_url'] ?? 'https://engageplus.id/widget.js');
+        $sanitized['org_id'] = sanitize_text_field($input['org_id'] ?? '');
+        $sanitized['widget_url'] = esc_url_raw($input['widget_url'] ?? 'https://auth.engageplus.id/public/pkce.js');
         $sanitized['auto_create_users'] = !empty($input['auto_create_users']);
         $sanitized['default_role'] = sanitize_text_field($input['default_role'] ?? 'subscriber');
         $sanitized['username_pattern'] = in_array($input['username_pattern'] ?? 'email', array('email', 'name')) ? $input['username_pattern'] : 'email';
         $sanitized['skip_email_verification'] = !empty($input['skip_email_verification']);
-        $sanitized['button_text'] = sanitize_text_field($input['button_text'] ?? 'Sign In');
-        $sanitized['theme'] = in_array($input['theme'] ?? 'light', array('light', 'dark')) ? $input['theme'] : 'light';
-        $sanitized['show_labels'] = !empty($input['show_labels']);
         $sanitized['redirect_after_login'] = sanitize_text_field($input['redirect_after_login'] ?? '');
         $sanitized['debug_mode'] = !empty($input['debug_mode']);
         
@@ -383,15 +320,11 @@ class EngagePlus {
      * Section render callbacks
      */
     public function render_api_section() {
-        echo '<p>' . esc_html__('Configure your EngagePlus API credentials. Get your Client ID from the EngagePlus dashboard.', 'engageplus') . '</p>';
+        echo '<p>' . esc_html__('Configure your EngagePlus credentials. Get your Organization ID from the EngagePlus dashboard. Widget styling is configured in the EngagePlus dashboard.', 'engageplus') . '</p>';
     }
     
     public function render_user_section() {
         echo '<p>' . esc_html__('Configure how users are created and managed when authenticating via EngagePlus.', 'engageplus') . '</p>';
-    }
-    
-    public function render_appearance_section() {
-        echo '<p>' . esc_html__('Customize the appearance of the EngagePlus login widget.', 'engageplus') . '</p>';
     }
     
     public function render_redirect_section() {
@@ -494,14 +427,14 @@ class EngagePlus {
      * Enqueue frontend assets
      */
     public function enqueue_frontend_assets() {
-        // Only load if Client ID is configured
-        if (empty($this->get_setting('client_id'))) {
+        // Only load if Organization ID is configured
+        if (empty($this->get_setting('org_id'))) {
             return;
         }
         
-        // EngagePlus Widget Script
+        // EngagePlus PKCE Widget Script
         wp_enqueue_script(
-            'engageplus-widget',
+            'engageplus-pkce',
             $this->get_setting('widget_url'),
             array(),
             null,
@@ -512,21 +445,18 @@ class EngagePlus {
         wp_enqueue_script(
             'engageplus-main',
             ENGAGEPLUS_PLUGIN_URL . 'assets/js/engageplus.js',
-            array('jquery', 'engageplus-widget'),
+            array('jquery', 'engageplus-pkce'),
             ENGAGEPLUS_VERSION,
             true
         );
         
         // Localize script with settings
         wp_localize_script('engageplus-main', 'engageplusConfig', array(
-            'clientId' => $this->get_setting('client_id'),
-            'apiBaseUrl' => $this->get_setting('api_base_url'),
+            'orgId' => $this->get_setting('org_id'),
+            'redirectUri' => $this->get_callback_url(),
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('engageplus_auth'),
             'isLoggedIn' => is_user_logged_in(),
-            'buttonText' => $this->get_setting('button_text'),
-            'theme' => $this->get_setting('theme'),
-            'showLabels' => $this->get_setting('show_labels'),
             'redirectAfterLogin' => $this->get_setting('redirect_after_login'),
             'debugMode' => $this->get_setting('debug_mode'),
         ));
@@ -538,6 +468,13 @@ class EngagePlus {
             array(),
             ENGAGEPLUS_VERSION
         );
+    }
+    
+    /**
+     * Get the callback URL for OAuth
+     */
+    public function get_callback_url() {
+        return home_url('/wp-json/engageplus/v1/callback');
     }
     
     /**
@@ -554,9 +491,6 @@ class EngagePlus {
     public function render_shortcode($atts) {
         $atts = shortcode_atts(array(
             'id' => 'engageplus-widget-' . uniqid(),
-            'button_text' => $this->get_setting('button_text'),
-            'theme' => $this->get_setting('theme'),
-            'show_labels' => $this->get_setting('show_labels'),
             'hide_logged_in' => 'true',
             'show_logout' => 'false',
         ), $atts, 'engageplus');
@@ -573,12 +507,12 @@ class EngagePlus {
             return '';
         }
         
-        // Check if Client ID is configured
-        if (empty($this->get_setting('client_id'))) {
+        // Check if Organization ID is configured
+        if (empty($this->get_setting('org_id'))) {
             if (current_user_can('manage_options')) {
                 return '<div class="engageplus-notice">' . 
                     sprintf(
-                        __('EngagePlus: Please <a href="%s">configure your Client ID</a> to enable the widget.', 'engageplus'),
+                        __('EngagePlus: Please <a href="%s">configure your Organization ID</a> to enable the widget.', 'engageplus'),
                         admin_url('options-general.php?page=engageplus')
                     ) . 
                     '</div>';
@@ -587,11 +521,8 @@ class EngagePlus {
         }
         
         return sprintf(
-            '<div id="%s" class="engageplus-widget" data-button-text="%s" data-theme="%s" data-show-labels="%s"></div>',
-            esc_attr($atts['id']),
-            esc_attr($atts['button_text']),
-            esc_attr($atts['theme']),
-            esc_attr($atts['show_labels'])
+            '<div id="%s" class="engageplus-widget"></div>',
+            esc_attr($atts['id'])
         );
     }
     
@@ -608,13 +539,20 @@ class EngagePlus {
     public function handle_auth_callback() {
         check_ajax_referer('engageplus_auth', 'nonce');
         
-        $user_data = json_decode(stripslashes($_POST['user_data'] ?? '{}'), true);
+        $tokens = json_decode(stripslashes($_POST['tokens'] ?? '{}'), true);
         
-        if (empty($user_data) || empty($user_data['email'])) {
-            wp_send_json_error(array('message' => __('Invalid user data received.', 'engageplus')));
+        if (empty($tokens)) {
+            wp_send_json_error(array('message' => __('Invalid tokens received.', 'engageplus')));
         }
         
-        $this->log('Authentication callback received', $user_data);
+        $this->log('Authentication callback received', array('has_id_token' => !empty($tokens['id_token'])));
+        
+        // Decode user data from ID token
+        $user_data = $this->decode_id_token($tokens);
+        
+        if (empty($user_data) || empty($user_data['email'])) {
+            wp_send_json_error(array('message' => __('Could not extract user data from token.', 'engageplus')));
+        }
         
         // Use the user handler to create or login the user
         $user_handler = new EngagePlus_User_Handler($this);
@@ -631,6 +569,44 @@ class EngagePlus {
             'message' => __('Login successful!', 'engageplus'),
             'redirect' => $result['redirect_url'],
         ));
+    }
+    
+    /**
+     * Decode ID token to extract user data
+     */
+    private function decode_id_token($tokens) {
+        $id_token = $tokens['id_token'] ?? '';
+        
+        if (empty($id_token)) {
+            return null;
+        }
+        
+        // JWT has 3 parts separated by dots
+        $parts = explode('.', $id_token);
+        
+        if (count($parts) !== 3) {
+            return null;
+        }
+        
+        // Decode the payload (second part)
+        $payload = $parts[1];
+        
+        // Add padding if needed
+        $payload = str_replace(['-', '_'], ['+', '/'], $payload);
+        $padding = strlen($payload) % 4;
+        if ($padding) {
+            $payload .= str_repeat('=', 4 - $padding);
+        }
+        
+        $decoded = base64_decode($payload);
+        
+        if (!$decoded) {
+            return null;
+        }
+        
+        $user_data = json_decode($decoded, true);
+        
+        return $user_data;
     }
     
     /**
@@ -685,7 +661,7 @@ class EngagePlus {
      * Add widget to login form
      */
     public function add_login_form_widget() {
-        if (empty($this->get_setting('client_id'))) {
+        if (empty($this->get_setting('org_id'))) {
             return;
         }
         

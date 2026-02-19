@@ -2,7 +2,7 @@
 
 Add social login to your WordPress site using any OIDC provider with EngagePlus - a lightweight, data-agnostic authentication platform.
 
-![WordPress Plugin Version](https://img.shields.io/badge/version-1.0.0-blue)
+![WordPress Plugin Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![WordPress Minimum Version](https://img.shields.io/badge/wordpress-%3E%3D5.0-green)
 ![PHP Minimum Version](https://img.shields.io/badge/php-%3E%3D7.4-purple)
 ![License](https://img.shields.io/badge/license-GPL--2.0%2B-orange)
@@ -15,11 +15,11 @@ EngagePlus is a lightweight JavaScript widget that enables social login via any 
 
 - 🔐 **Social Login** - Support for Google, GitHub, Microsoft, LinkedIn, X, Facebook, and custom OIDC providers
 - ⚡ **Lightweight** - Minimal footprint with efficient JavaScript widget
-- 🎨 **Customizable** - Light/dark themes, custom button text, flexible placement
+- 🎨 **Dashboard Styling** - Widget appearance configured in EngagePlus dashboard
 - 🔄 **Auto User Creation** - Automatically create WordPress accounts for new OAuth users
 - 📱 **Responsive** - Works seamlessly on all devices
 - 🔒 **Secure** - HTTPS required, PKCE flow, no user data stored by EngagePlus
-- 🧩 **Multiple Widgets** - Place multiple widgets with different configurations
+- 🧩 **Multiple Widgets** - Place multiple widgets across your site
 - 📊 **Debug Mode** - Built-in logging for troubleshooting
 
 ## Installation
@@ -50,31 +50,35 @@ git clone https://github.com/engageplus-id/wordpress.git engageplus
 
 1. Visit [engageplus.id](https://engageplus.id) and create a free account
 2. Configure your OAuth providers (Google, GitHub, Microsoft, etc.) in the dashboard
-3. Customize your widget appearance
-4. Copy your **Client ID**
+3. Customize your widget appearance (colors, button text, providers) in the dashboard
+4. Copy your **Organization ID**
 
 ### Step 2: Configure the Plugin
 
 1. Go to **Settings** > **EngagePlus** in your WordPress admin
-2. Enter your **Client ID**
+2. Enter your **Organization ID**
 3. Configure user settings:
    - **Auto Create Users**: Enable to create WordPress accounts for new OAuth users
    - **Default Role**: Choose which role to assign to new users
    - **Username Pattern**: Use email or display name for usernames
    - **Skip Email Verification**: Trust OAuth provider verification (recommended)
-4. Customize widget appearance:
-   - **Button Text**: Text displayed on the login button
-   - **Theme**: Light or dark theme
-   - **Show Provider Labels**: Display provider names next to icons
-5. Save settings
+4. Save settings
 
-### Step 3: Configure Redirect URIs
+### Step 3: Configure Redirect URI
 
-In your EngagePlus dashboard, add your WordPress site URL as a redirect URI:
+In your EngagePlus dashboard, add your WordPress callback URL as a redirect URI:
 
 ```
-https://yoursite.com
+https://yoursite.com/wp-json/engageplus/v1/callback
 ```
+
+## Widget Styling
+
+**Important**: Widget appearance (colors, button text, provider icons, themes) is configured in the EngagePlus dashboard, not in WordPress. This allows you to:
+
+- Update styling without modifying your WordPress site
+- Maintain consistent branding across multiple platforms
+- A/B test different widget configurations
 
 ## Usage
 
@@ -91,19 +95,14 @@ Add the login widget anywhere using the shortcode:
 | Attribute | Default | Description |
 |-----------|---------|-------------|
 | `id` | Auto-generated | Unique container ID |
-| `button_text` | Global setting | Custom button text |
-| `theme` | Global setting | `light` or `dark` |
-| `show_labels` | Global setting | Show provider names |
 | `hide_logged_in` | `true` | Hide widget for logged-in users |
 | `show_logout` | `false` | Show logout button when logged in |
 
 #### Examples
 
 ```
-[engageplus button_text="Sign In with Social"]
-[engageplus theme="dark"]
+[engageplus]
 [engageplus hide_logged_in="false" show_logout="true"]
-[engageplus button_text="Get Started" theme="dark"]
 ```
 
 ### Widget
@@ -113,13 +112,31 @@ Add the login widget anywhere using the shortcode:
 3. Configure widget settings:
    - Title
    - Container ID
-   - Button text
-   - Theme
    - Visibility options
 
 ### Login Page Integration
 
 The widget automatically appears on the WordPress login and registration pages, providing an alternative login method.
+
+## How It Works
+
+The plugin uses the OPWidget PKCE-based authentication flow:
+
+```html
+<div id="login-container"></div>
+<script src="https://auth.engageplus.id/public/pkce.js"></script>
+<script>
+  const widget = new OPWidget({ 
+    orgId: 'your-org-id',
+    redirectUri: 'https://yoursite.com/wp-json/engageplus/v1/callback',
+    onSuccess: (tokens) => console.log('Logged in!', tokens),
+    onError: (error) => console.error('Login failed:', error)
+  });
+  widget.mount('#login-container');
+</script>
+```
+
+The WordPress plugin handles this automatically, including the token exchange and WordPress user creation/login.
 
 ## User Management
 
@@ -170,7 +187,7 @@ add_action('engageplus_user_login', function($user, $user_data) {
     wp_mail(
         get_option('admin_email'),
         'New EngagePlus Login',
-        'User ' . $user->display_name . ' logged in via ' . $user_data['provider']
+        'User ' . $user->display_name . ' logged in via ' . ($user_data['iss'] ?? 'EngagePlus')
     );
 }, 10, 2);
 ```
@@ -181,7 +198,6 @@ add_action('engageplus_user_login', function($user, $user_data) {
 add_action('engageplus_user_created', function($user_id, $user_data) {
     // Add custom user meta
     update_user_meta($user_id, 'registration_source', 'engageplus');
-    update_user_meta($user_id, 'oauth_provider', $user_data['provider']);
     
     // Subscribe to newsletter
     if (function_exists('newsletter_subscribe')) {
@@ -227,12 +243,8 @@ Listen for authentication events:
 
 ```javascript
 // Using jQuery
-jQuery(document).on('engageplus:login', function(e, user) {
-    console.log('User logged in:', user);
-});
-
-jQuery(document).on('engageplus:logout', function() {
-    console.log('User logged out');
+jQuery(document).on('engageplus:success', function(e, tokens) {
+    console.log('Authentication successful:', tokens);
 });
 
 jQuery(document).on('engageplus:error', function(e, error) {
@@ -249,14 +261,14 @@ if (window.EngagePlusWP) {
 
 ### Widget Not Appearing
 
-1. **Check Client ID**: Ensure Client ID is configured in settings
+1. **Check Organization ID**: Ensure Organization ID is configured in settings
 2. **Check Block Placement**: Verify shortcode/widget is in visible area
 3. **Clear Cache**: Clear any caching plugins and browser cache
 4. **Check JavaScript Console**: Look for errors in browser developer tools
 
 ### Authentication Fails
 
-1. **Check Redirect URI**: Verify your site URL is added in EngagePlus dashboard
+1. **Check Redirect URI**: Verify your callback URL is added in EngagePlus dashboard
 2. **Check Browser Console**: Look for JavaScript errors
 3. **Enable Debug Mode**: Enable in settings and check PHP error log
 4. **Verify OAuth Config**: Ensure providers are configured in EngagePlus
@@ -271,7 +283,7 @@ if (window.EngagePlusWP) {
 ### Widget Shows But Doesn't Work
 
 1. **Check HTTPS**: EngagePlus requires HTTPS in production
-2. **Check Script Loading**: Verify widget.js loads in Network tab
+2. **Check Script Loading**: Verify pkce.js loads in Network tab
 3. **Check Conflicts**: Disable other plugins to test for conflicts
 4. **Check Ad Blockers**: Some ad blockers may block OAuth popups
 
@@ -321,6 +333,14 @@ This plugin is licensed under the GPL-2.0+ license. See [LICENSE](LICENSE) for d
 
 ## Changelog
 
+### 1.1.0 (2026-02-19)
+- Updated to new OPWidget PKCE-based authentication
+- Changed from Client ID to Organization ID
+- Widget styling now configured in EngagePlus dashboard
+- Removed local theme/button_text settings
+- Updated widget script URL to auth.engageplus.id/public/pkce.js
+- Improved token handling with JWT decoding
+
 ### 1.0.0 (2024-12-18)
 - Initial release
 - Basic widget integration
@@ -333,4 +353,3 @@ This plugin is licensed under the GPL-2.0+ license. See [LICENSE](LICENSE) for d
 ---
 
 Made with ❤️ by the [EngagePlus Team](https://engageplus.id)
-

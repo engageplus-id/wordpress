@@ -5,6 +5,24 @@ All notable changes to the EngagePlus WordPress Plugin will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-19
+
+### Changed
+- Updated to new OPWidget PKCE-based authentication flow
+- Changed configuration from Client ID to Organization ID
+- Widget styling is now configured in EngagePlus dashboard (removed local theme/button_text settings)
+- Updated widget script URL from `engageplus.id/widget.js` to `auth.engageplus.id/public/pkce.js`
+- Simplified shortcode attributes (removed styling options)
+- Updated redirect URI to use REST API callback endpoint
+
+### Added
+- JWT token decoding for extracting user data from ID tokens
+- `get_callback_url()` method for generating redirect URI
+
+### Removed
+- Local widget appearance settings (theme, button_text, show_labels)
+- API Base URL setting (no longer needed)
+
 ## [1.0.0] - 2024-12-18
 
 ### Added
@@ -31,4 +49,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Input sanitization and validation
 - Secure password generation for new users
 - HTTPS enforcement recommendation
-
